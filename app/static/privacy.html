@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보 안내 | 플레이리스트 추천기</title>
+<meta name="description" content="플레이리스트 추천기가 어떤 정보를 쓰고 어디에 저장하는지 쉽게 설명해요.">
+<link rel="canonical" href="__SITE__/privacy">
+<link rel="stylesheet" href="/static/doc.css">
+</head>
+<body>
+<main>
+  <nav><a href="/">추천받기</a><a href="/about">서비스 소개</a><a href="/privacy">개인정보 안내</a></nav>
+  <h1>개인정보 안내</h1>
+  <p>이 서비스는 회원가입이 없고, 추천에 필요한 최소한의 정보만 잠깐 사용해요.</p>
+
+  <h2>서버에서 하는 일</h2>
+  <ul>
+    <li><strong>붙여넣은 곡 목록과 플레이리스트 링크</strong>는 추천을 계산하는 동안만 쓰고 <strong>서버에 저장하지 않아요</strong>. 다만 곡 제목에 대한 Last.fm 조회 결과는 속도를 위해 서버 메모리에 몇 시간 임시로 보관돼요. 이때 누구의 목록인지는 기록하지 않아요.</li>
+    <li>추천을 만들려고 곡 제목과 아티스트 이름을 Last.fm에 보내 비슷한 곡을 조회하고, 곡 링크를 만들려고 Spotify에서 검색해요. 그 밖의 개인정보는 보내지 않아요.</li>
+    <li>YouTube 링크를 넣으면 YouTube의 공식 API로 그 공개 플레이리스트의 곡 제목을 읽어요.</li>
+  </ul>
+
+  <h2>Spotify로 로그인하는 경우 (선택)</h2>
+  <ul>
+    <li>아이디와 비밀번호는 Spotify 페이지에서만 입력하고, 이 서비스는 받지 않아요.</li>
+    <li>기본으로는 플레이리스트를 <strong>읽는 권한</strong>만 요청해요. ‘추가 권한 허용’을 눌렀을 때만 곡을 추가하는 권한을 따로 요청해요.</li>
+    <li>로그인 정보는 서버 메모리에만 잠깐 두고, 서버가 재시작되면 사라져요. 브라우저에는 로그인 상태를 나타내는 세션 쿠키 하나만 남아요.</li>
+    <li>언제든 화면의 로그아웃을 누르거나, <a href="https://www.spotify.com/account/apps" target="_blank" rel="noopener">Spotify 계정의 앱 관리</a>에서 권한을 끊을 수 있어요.</li>
+  </ul>
+
+  <h2>내 브라우저에 저장되는 것</h2>
+  <ul>
+    <li>이미 추천한 곡 목록을 내 브라우저(localStorage)에만 저장해요. ‘더 추천받기’에서 같은 곡이 나오지 않게 하려는 거예요. 화면의 ‘추천 기록 지우기’로 지울 수 있어요.</li>
+    <li>광고나 분석용 쿠키는 쓰지 않아요.</li>
+  </ul>
+
+  <h2>호스팅 업체의 기록</h2>
+  <p class="muted">서비스를 올려 둔 호스팅 업체는 운영상 접속 기록(예: IP 주소, 접속 시각)을 남길 수 있어요. 이 서비스는 그 기록을 따로 가공하거나 다른 곳에 쓰지 않아요.</p>
+</main>
+</body>
+</html>

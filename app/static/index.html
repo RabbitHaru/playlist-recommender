@@ -3,7 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>플레이리스트 추천기</title>
+<title>플레이리스트 곡 추천 - 비슷한 노래를 이유와 함께 | 플레이리스트 추천기</title>
+<meta name="description" content="내 플레이리스트의 곡을 붙여넣으면 어울리는 노래를 추천 이유와 함께 알려드려요. 로그인 없이 무료로 쓸 수 있고, YouTube Music·Spotify 링크도 지원해요.">
+<link rel="canonical" href="__SITE__/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="플레이리스트 곡 추천 - 비슷한 노래를 이유와 함께">
+<meta property="og:description" content="내 플레이리스트의 곡을 붙여넣으면 어울리는 노래를 추천 이유와 함께 알려드려요. 무료, 로그인 불필요.">
+<meta property="og:url" content="__SITE__/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"플레이리스트 추천기","url":"__SITE__/","inLanguage":"ko","applicationCategory":"MultimediaApplication","operatingSystem":"Any","description":"내 플레이리스트에 어울리는 노래를 추천 이유와 함께 알려주는 무료 웹 서비스","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}}
+</script>
 <style>
   :root { --bg:#111418; --card:#1a1f26; --text:#e8ecf1; --muted:#8b95a3; --accent:#1db954; --line:#2a313b; }
   @media (prefers-color-scheme: light) {
@@ -68,6 +79,10 @@
   .headrow { display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap; margin-bottom:.5rem; }
   .headrow .head { margin:0; }
   .hint { display:block; color:var(--muted); font-size:.8rem; margin-top:.375rem; }
+  .info { margin-top:2rem; color:var(--muted); }
+  .info h2 { font-size:1.1rem; color:var(--text); margin:1.5rem 0 .5rem; }
+  .info details { padding:.25rem 0; }
+  .info a { color:var(--accent); }
   .placeholder { color:var(--muted); text-align:center; padding:3rem 1rem; }
   .err { color:#ff6b6b; margin-top:.75rem; }
   footer { color:var(--muted); font-size:.8rem; margin-top:1.5rem; }
@@ -130,10 +145,25 @@
     </div>
   </div>
 
+  <section class="info">
+    <h2>이렇게 써요</h2>
+    <ol>
+      <li>플레이리스트의 곡을 <b>한 줄에 하나씩 ‘가수 - 제목’</b>으로 붙여넣어요. YouTube Music·Spotify 플레이리스트 링크도 돼요.</li>
+      <li>받고 싶은 곡의 성향(익숙하게 · 균형 있게 · 새롭게)과 개수를 고르고 <b>추천받기</b>를 눌러요.</li>
+      <li>추천된 곡마다 <b>왜 어울리는지 이유</b>가 두 줄로 나와요. 마음에 드는 곡은 Spotify나 YouTube Music에서 바로 열어요.</li>
+    </ol>
+    <h2>자주 묻는 질문</h2>
+    <details><summary>로그인이나 회원가입이 필요한가요?</summary><p>아니요. 곡 목록을 붙여넣으면 바로 쓸 수 있어요. Spotify로 로그인하면 내 플레이리스트를 골라 쓰고 추천 곡을 바로 추가할 수 있지만, 선택 사항이에요.</p></details>
+    <details><summary>어떻게 비슷한 곡을 찾나요?</summary><p>Last.fm의 청취 기록에서 "이 곡을 들은 사람들이 함께 들은 곡"을 가져와, 내 플레이리스트의 여러 곡과 겹치는 곡에 높은 점수를 줘요. 자세한 방식은 <a href="/about">서비스 소개</a>에 있어요.</p></details>
+    <details><summary>무료인가요?</summary><p>네, 무료예요. 광고도 없어요.</p></details>
+    <details><summary>내 플레이리스트 정보는 저장되나요?</summary><p>서버에 저장하지 않아요. 자세한 내용은 <a href="/privacy">개인정보 안내</a>를 확인해 주세요.</p></details>
+  </section>
+
   <footer>
     비슷한 곡 데이터는 <a href="https://www.last.fm" target="_blank" rel="noopener">Last.fm</a>,
     플레이리스트와 곡 링크는 <a href="https://www.spotify.com" target="_blank" rel="noopener">Spotify</a>에서 가져와요.
     추천 기록은 이 브라우저에만 저장돼요.
+    · <a href="/about">서비스 소개</a> · <a href="/privacy">개인정보 안내</a>
     <span id="ver"></span>
   </footer>
 </main>

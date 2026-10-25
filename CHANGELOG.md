@@ -3,6 +3,16 @@
 버전은 [유의적 버전](https://semver.org/lang/ko/)(`주.부.수`)을 따라요. 현재 버전은 `app/__init__.py`의 `__version__`에 있어요.
 새 버전을 올릴 때는 이 파일의 맨 위에 항목을 추가하고, `__version__`을 바꾸고, `v버전` 태그와 GitHub 릴리스를 만들어요.
 
+## [0.4.0] - 2026-10-25
+### 추가
+- 검색에 잡히는 페이지: 제목·설명·canonical·Open Graph·구조화 데이터(JSON-LD), 사용법과 자주 묻는 질문 본문
+- 서비스 소개(`/about`)와 개인정보 안내(`/privacy`) 페이지, `robots.txt`, `sitemap.xml`
+- 무료 호스팅(Render) 배포 설정 `render.yaml` (비밀 값은 저장소에 넣지 않고 호스팅 화면에서 입력)
+- `SITE_URL` 설정: 배포 주소를 canonical과 sitemap에 반영
+### 수정
+- 프록시 뒤에서도 방문자 IP로 요청 제한이 걸리도록 시작 명령에 `--proxy-headers` 추가
+- 요청 제한 기록이 무한히 쌓이지 않도록 오래된 방문자 정리
+
 ## [0.3.0] - 2026-10-25
 ### 추가
 - YouTube / YouTube Music 공개 플레이리스트 링크 읽기 (공식 YouTube Data API, 로그인 불필요). API 키가 있을 때만 켜지는 선택 기능

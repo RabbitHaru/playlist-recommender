@@ -1,0 +1,19 @@
+:root { --bg:#111418; --card:#1a1f26; --text:#e8ecf1; --muted:#8b95a3; --accent:#1db954; --line:#2a313b; }
+@media (prefers-color-scheme: light) {
+  :root { --bg:#f5f6f8; --card:#fff; --text:#1b2027; --muted:#667085; --line:#e3e6eb; }
+}
+html { font-size:16px; }
+@media (min-width:1920px) { html { font-size:18px; } }
+@media (min-width:2400px) { html { font-size:22px; } }
+@media (min-width:3200px) { html { font-size:30px; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:1rem/1.7 system-ui,"Malgun Gothic",sans-serif; }
+main { max-width:46rem; margin:0 auto; padding:1.5rem 1rem 3rem; }
+h1 { font-size:1.6rem; margin:.5rem 0 1rem; }
+h2 { font-size:1.2rem; margin:2rem 0 .5rem; }
+p, li { color:var(--text); }
+li { margin:.25rem 0; }
+a { color:var(--accent); }
+nav a { margin-right:1rem; text-decoration:none; }
+.muted { color:var(--muted); font-size:.9rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:.75rem; padding:1rem 1.25rem; }

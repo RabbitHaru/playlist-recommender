@@ -6,7 +6,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -28,6 +28,9 @@ _hits: dict[str, deque] = defaultdict(deque)
 def _check_rate_limit(request: Request) -> None:
     ip = request.client.host if request.client else "unknown"
     now = time.time()
+    if len(_hits) > 5000:  # forget idle visitors so this dict cannot grow without bound
+        for key in [k for k, d in _hits.items() if not d or now - d[-1] > 60]:
+            del _hits[key]
     hits = _hits[ip]
     while hits and now - hits[0] > 60:
         hits.popleft()
@@ -207,9 +210,53 @@ async def add_to_playlist(playlist_id: str, body: AddRequest, request: Request):
     return {"added": len(body.uris)}
 
 
+def _site(request: Request) -> str:
+    return config.SITE_URL or str(request.base_url).rstrip("/")
+
+
+def _page(name: str, request: Request) -> HTMLResponse:
+    """Serves a static page with its canonical/og addresses filled in."""
+    html = (STATIC / name).read_text(encoding="utf-8").replace("__SITE__", _site(request))
+    return HTMLResponse(html)
+
+
 @app.get("/")
-async def index():
-    return FileResponse(STATIC / "index.html")
+async def index(request: Request):
+    return _page("index.html", request)
+
+
+@app.get("/about")
+async def about(request: Request):
+    return _page("about.html", request)
+
+
+@app.get("/privacy")
+async def privacy(request: Request):
+    return _page("privacy.html", request)
+
+
+@app.get("/robots.txt")
+async def robots(request: Request):
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /api/",
+        "Disallow: /auth/",
+        "Disallow: /callback",
+        f"Sitemap: {_site(request)}/sitemap.xml",
+    ]
+    return PlainTextResponse("\n".join(lines) + "\n")
+
+
+@app.get("/sitemap.xml")
+async def sitemap(request: Request):
+    base = _site(request)
+    urls = "".join(f"<url><loc>{base}{path}</loc></url>" for path in ("/", "/about", "/privacy"))
+    return Response(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>',
+        media_type="application/xml",
+    )
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")

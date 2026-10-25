@@ -27,6 +27,16 @@ http://127.0.0.1:8000 접속 (`localhost`가 아니라 `127.0.0.1`). Spotify 대
 - 한 번에 30곡이 모두 채워졌어요 (indie rock, k-pop, korean, hip-hop, jazz, electronic)
 - 한계: 가짜 플레이리스트가 추천에 쓰는 Last.fm 데이터와 같은 출처라서 수치가 실제보다 후하게 나와요. 회귀 확인용이지 절대 점수가 아니에요.
 
+## 무료 배포 (Render)
+광고 없이 무료로 올리는 방법이에요. 신용카드는 필요 없어요.
+1. [render.com](https://render.com)에서 **GitHub로 로그인**하고, 이 저장소 접근을 허용해요.
+2. **New → Blueprint**에서 이 저장소를 고르면 `render.yaml`이 읽혀요.
+3. 화면이 묻는 값을 입력해요: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `LASTFM_API_KEY` (`YOUTUBE_API_KEY`는 선택). 이 값은 Render 화면에만 입력하고 저장소에는 넣지 않아요.
+4. 배포가 끝나면 나오는 주소(`https://….onrender.com`)를 `SITE_URL`에 넣어 다시 배포해요. Spotify 로그인을 쓰려면 `SPOTIFY_REDIRECT_URI`를 `<그 주소>/callback`으로 넣고, 같은 값을 Spotify 대시보드의 Redirect URI에도 등록해요.
+5. [Google Search Console](https://search.google.com/search-console)에 그 주소를 등록하고 `sitemap.xml`을 제출해요.
+
+무료 플랜은 15분간 접속이 없으면 잠들고, 다시 접속하면 깨어나는 데 시간이 걸려요. 로그인 상태도 그때 사라져요.
+
 ## 알려진 한계
 - Spotify 개발 모드 앱은 로그인한 본인 소유(또는 협업) 플레이리스트의 곡 목록만 읽을 수 있어서, 남의 공개 플레이리스트는 링크만으로 읽을 수 없음 (곡 목록 직접 붙여넣기는 가능)
 - Last.fm 데이터 기반이라 인기곡 쏠림이 있고, 한국 음악 등 데이터가 적은 곡은 추천이 부실할 수 있음
