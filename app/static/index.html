@@ -133,6 +133,7 @@
     비슷한 곡 데이터는 <a href="https://www.last.fm" target="_blank" rel="noopener">Last.fm</a>,
     플레이리스트와 곡 링크는 <a href="https://www.spotify.com" target="_blank" rel="noopener">Spotify</a>에서 가져와요.
     추천 기록은 이 브라우저에만 저장돼요.
+    <span id="ver"></span>
   </footer>
 </main>
 
@@ -178,6 +179,7 @@ async function initAuth() {
 }
 $("mylist").onchange = () => { if ($("mylist").value) $("url").value = $("mylist").value; };
 initAuth();
+fetch("/api/health").then(r => r.json()).then(h => { if (h.version) $("ver").textContent = `· v${h.version}`; }).catch(() => {});
 
 const loginState = new URLSearchParams(location.search).get("login");
 if (loginState === "cancelled" || loginState === "failed") {

@@ -9,13 +9,13 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import auth, config, lastfm, recommender
+from . import __version__, auth, config, lastfm, recommender
 from .providers import spotify
 from .providers import ProviderError, get_providers, pick_provider
 
 STATIC = Path(__file__).parent / "static"
 
-app = FastAPI(title="Playlist Recommender")
+app = FastAPI(title="Playlist Recommender", version=__version__)
 
 # The server keeps no user data: playlists are read per request, and the list of
 # already-recommended songs lives in the browser and is sent back as `exclude`.
@@ -45,7 +45,7 @@ class RecommendRequest(BaseModel):
 
 @app.get("/api/health")
 async def health():
-    return {"ok": not config.missing_keys(), "missing": config.missing_keys()}
+    return {"ok": not config.missing_keys(), "missing": config.missing_keys(), "version": __version__}
 
 
 @app.post("/api/recommend")

@@ -2,6 +2,8 @@
 
 Spotify 플레이리스트 링크를 넣으면, 어울리는 곡을 **추천 이유**와 함께 보여주는 웹앱입니다.
 
+버전별 업데이트 사항은 [CHANGELOG.md](CHANGELOG.md)와 [Releases](https://github.com/RabbitHaru/playlist-recommender/releases)에서 볼 수 있어요.
+
 ## 동작 방식
 1. Spotify 로그인(PKCE, 읽기 권한만) 후 내가 만들었거나 함께 편집하는 플레이리스트의 곡 목록을 읽음. 비밀번호는 Spotify 페이지에서만 입력하고 앱은 받지 않음
 2. 곡마다 Last.fm `track.getSimilar`로 비슷한 곡을 받아 점수를 합산 (여러 곡에서 함께 나올수록 높은 점수)
