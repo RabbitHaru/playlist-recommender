@@ -67,6 +67,7 @@
   .notice a { color:var(--accent); }
   .headrow { display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap; margin-bottom:.5rem; }
   .headrow .head { margin:0; }
+  .hint { display:block; color:var(--muted); font-size:.8rem; margin-top:.375rem; }
   .placeholder { color:var(--muted); text-align:center; padding:3rem 1rem; }
   .err { color:#ff6b6b; margin-top:.75rem; }
   footer { color:var(--muted); font-size:.8rem; margin-top:1.5rem; }
@@ -82,7 +83,7 @@
   <div class="layout">
     <div class="controls">
       <div class="card authbar">
-        <span id="authtext" class="msg">Spotify 로그인이 필요해요 (플레이리스트 읽기 권한만 요청해요)</span>
+        <span id="authtext" class="msg">Spotify로 로그인하면 내 플레이리스트를 골라 쓰고 곡을 바로 추가할 수 있어요 (선택)</span>
         <span>
           <a id="loginbtn" href="/auth/login"><button type="button">Spotify로 로그인</button></a>
           <a id="grantbtn" href="/auth/login?write=1" hidden><button type="button" class="ghost">추가 권한 허용</button></a>
@@ -97,12 +98,12 @@
           <label for="mylist">내 플레이리스트에서 고르기</label>
           <select id="mylist"><option value="">선택...</option></select>
         </div>
-        <label for="url">또는 플레이리스트 링크 (내가 만들었거나 함께 편집하는 것)</label>
-        <input id="url" type="text" placeholder="https://open.spotify.com/playlist/...">
-        <details>
-          <summary>링크가 안 될 때: 곡 목록 직접 붙여넣기</summary>
-          <textarea id="manual" placeholder="한 줄에 하나씩: 가수 - 제목"></textarea>
-        </details>
+        <label for="manual">내 플레이리스트의 곡을 붙여넣어 주세요</label>
+        <textarea id="manual" rows="6" placeholder="한 줄에 하나씩, 이렇게:&#10;Radiohead - Creep&#10;Coldplay - Yellow"></textarea>
+
+        <label for="url">또는 플레이리스트 링크 (YouTube · Spotify)</label>
+        <input id="url" type="text" placeholder="https://music.youtube.com/playlist?list=...">
+        <small class="hint">링크를 넣으면 링크가 먼저 쓰여요. YouTube는 공개 플레이리스트면 로그인 없이 돼요. Spotify는 로그인한 내 플레이리스트만 돼요.</small>
 
         <label for="count">추천 개수</label>
         <select id="count"><option>10</option><option selected>20</option><option>30</option></select>
@@ -246,7 +247,7 @@ function render(data) {
           <h3>${esc(r.title)}</h3>
           <div class="artist">${esc(r.artist)}</div>
           <ul class="reason">${r.reasons.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
-          ${r.link && r.link.url ? `<a href="${esc(r.link.url)}" target="_blank" rel="noopener">Spotify에서 열기</a>` : ""}
+          ${r.link && r.link.url ? `<a href="${esc(r.link.url)}" target="_blank" rel="noopener">Spotify에서 열기</a> · ` : ""}<a href="${esc(r.yt_url)}" target="_blank" rel="noopener">YouTube Music에서 찾기</a>
           ${canAdd && r.link && r.link.uri ? `<div><button class="ghost add" data-uri="${esc(r.link.uri)}">＋ 플레이리스트에 추가</button></div>` : ""}
         </div>
       </div>`).join("") + `</div>`;

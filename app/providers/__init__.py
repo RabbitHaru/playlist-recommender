@@ -15,12 +15,14 @@ class ProviderError(Exception):
 
 def get_providers() -> list:
     from .spotify import SpotifyProvider
+    from .youtube import YouTubeProvider
 
-    return [SpotifyProvider()]
+    # Order matters: the first provider is also used to link recommended songs.
+    return [SpotifyProvider(), YouTubeProvider()]
 
 
 def pick_provider(text: str):
     for provider in get_providers():
         if provider.can_handle(text):
             return provider
-    raise ProviderError("지원하지 않는 링크예요. 지금은 Spotify 플레이리스트 링크만 가능해요.")
+    raise ProviderError("지원하지 않는 링크예요. YouTube(Music)·Spotify 플레이리스트 링크나 곡 목록을 붙여넣어 주세요.")

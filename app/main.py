@@ -1,5 +1,6 @@
 import asyncio
 import time
+from urllib.parse import quote
 from collections import defaultdict, deque
 from pathlib import Path
 
@@ -45,7 +46,7 @@ class RecommendRequest(BaseModel):
 
 @app.get("/api/health")
 async def health():
-    return {"ok": not config.missing_keys(), "missing": config.missing_keys(), "version": __version__}
+    return {"ok": not config.missing_keys(), "missing": config.missing_keys(), "youtube": bool(config.YOUTUBE_API_KEY), "version": __version__}
 
 
 @app.post("/api/recommend")
@@ -83,6 +84,7 @@ async def recommend(body: RecommendRequest, request: Request):
                 async with sem:
                     rec["link"] = await provider.find_link(client, rec["artist"], rec["title"])
                 rec["key"] = recommender.track_key(rec["artist"], rec["title"])
+                rec["yt_url"] = "https://music.youtube.com/search?q=" + quote(f'{rec["artist"]} {rec["title"]}')
 
             await asyncio.gather(*(attach(r) for r in recs))
         except (ProviderError, lastfm.LastfmError) as exc:
