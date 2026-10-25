@@ -9,7 +9,9 @@ import httpx
 from . import lastfm
 
 MAX_SEEDS = 30
-POOL_SIZE = 60
+POOL_SIZE = 60          # candidates considered when only similarity matters
+POOL_WIDEN = 100        # extra candidates at full novelty, so lesser-known songs can enter
+POOL_MAX = 150
 MAX_PER_ARTIST = 2
 TAG_BONUS = 0.15
 
@@ -101,7 +103,10 @@ async def recommend(
     if not candidates:
         return []
 
-    pool = sorted(candidates.values(), key=lambda c: -c["score"])[:POOL_SIZE]
+    # The more the user wants new songs, the deeper we look past the obvious top matches;
+    # otherwise re-ranking by popularity could never surface a lesser-known song.
+    pool_size = min(POOL_MAX, max(POOL_SIZE, count * 2) + int(novelty * POOL_WIDEN))
+    pool = sorted(candidates.values(), key=lambda c: -c["score"])[:pool_size]
     top = pool[0]["score"] or 1.0
 
     async def tags_of(artist: str):
@@ -145,7 +150,9 @@ async def recommend(
             for tag in artist_tags.get(cand["artist"].strip().lower(), [])
             if profile[tag] >= 2
         ][:2]
-        final = cand["score"] / top
+        # At high novelty, flatten the head start that widely-agreed (= famous) songs get,
+        # otherwise a lesser-known song can never overtake them.
+        final = (cand["score"] / top) ** (1 - 0.7 * novelty)
         final *= 1 + TAG_BONUS * (len(shared) / 2)
         if pop_value is not None:
             final *= 1 - novelty * 0.9 * pop_value

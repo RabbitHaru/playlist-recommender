@@ -99,5 +99,41 @@ class RecommenderTest(unittest.TestCase):
         self.assertEqual(len(tracks), 2)
 
 
+class PoolDepthTest(unittest.TestCase):
+    """Obscure songs sit below rank 60 by similarity; only a wider pool can surface them."""
+
+    def run_with_many_candidates(self, novelty):
+        many = [
+            {"artist": f"Art{i}", "title": f"Song{i}", "match": 1.0 - i / 200}
+            for i in range(120)
+        ]
+
+        async def similar(client, artist, title, limit=30):
+            return many
+
+        async def listeners(client, artist, title):
+            return 10_000_000 if int(title[4:]) < 70 else 500  # deep candidates are obscure
+
+        async def tags(client, artist, limit=5):
+            return []
+
+        with mock.patch("app.lastfm.similar_tracks", similar), mock.patch(
+            "app.lastfm.listeners", listeners
+        ), mock.patch("app.lastfm.top_tags", tags):
+            return asyncio.run(
+                recommender.recommend(
+                    None, PLAYLIST, count=10, novelty=novelty, rng=random.Random(0)
+                )
+            )
+
+    def test_safe_mode_stays_with_top_matches(self):
+        titles = {int(r["title"][4:]) for r in self.run_with_many_candidates(0)}
+        self.assertTrue(all(i < 60 for i in titles))
+
+    def test_novel_mode_reaches_deeper_obscure_songs(self):
+        titles = {int(r["title"][4:]) for r in self.run_with_many_candidates(1)}
+        self.assertTrue(any(i >= 70 for i in titles))
+
+
 if __name__ == "__main__":
     unittest.main()
