@@ -55,6 +55,18 @@ async def _get(
     )
 
 
+PLAYLIST_ID_RE = re.compile(r"[A-Za-z0-9]{22}")
+TRACK_URI_RE = re.compile(r"spotify:track:[A-Za-z0-9]{22}")
+
+
+def valid_playlist_id(value: str) -> bool:
+    return bool(PLAYLIST_ID_RE.fullmatch(value))
+
+
+def valid_track_uri(value: str) -> bool:
+    return bool(TRACK_URI_RE.fullmatch(value))
+
+
 def _track_from_item(item: dict) -> dict | None:
     track = item.get("track") or item.get("item")
     if not track or track.get("type", "track") != "track" or not track.get("name"):
@@ -112,7 +124,35 @@ async def fetch_playlist(
         if not body.get("next"):
             break
         offset += 100
-    return {"name": name, "tracks": tracks}
+    return {"id": playlist_id, "name": name, "tracks": tracks}
+
+
+async def add_tracks(
+    client: httpx.AsyncClient, playlist_id: str, uris: list[str], user_token: str
+) -> None:
+    """Appends tracks to a playlist the user owns or collaborates on (needs playlist-modify-*)."""
+    if not valid_playlist_id(playlist_id) or not uris or not all(valid_track_uri(u) for u in uris):
+        raise SpotifyError("추가할 곡 정보가 올바르지 않아요.")
+    resp = None
+    # Spotify renamed /tracks to /items; fall back if the first one is not found.
+    for endpoint in ("items", "tracks"):
+        resp = await client.post(
+            f"{API}/playlists/{playlist_id}/{endpoint}",
+            json={"uris": uris},
+            headers={"Authorization": f"Bearer {user_token}"},
+        )
+        if resp.status_code in (200, 201):
+            return
+        if resp.status_code != 404:
+            break
+    if resp.status_code in (401, 403):
+        raise SpotifyError(
+            "이 플레이리스트에 곡을 추가할 수 없어요. 내가 만들었거나 함께 편집하는 "
+            "플레이리스트인지, 추가 권한을 허용했는지 확인해 주세요."
+        )
+    if resp.status_code == 429:
+        raise SpotifyError("요청이 많아요. 잠시 후 다시 시도해 주세요.")
+    raise SpotifyError(f"곡을 추가하지 못했어요 (HTTP {resp.status_code}).")
 
 
 async def search_track(client: httpx.AsyncClient, artist: str, title: str) -> dict | None:
@@ -144,6 +184,11 @@ class SpotifyProvider:
         self, client: httpx.AsyncClient, text: str, user_token: str | None = None
     ) -> dict:
         return await fetch_playlist(client, parse_playlist_id(text), user_token)
+
+    async def add_tracks(
+        self, client: httpx.AsyncClient, playlist_id: str, uris: list[str], user_token: str
+    ) -> None:
+        await add_tracks(client, playlist_id, uris, user_token)
 
     async def find_link(self, client: httpx.AsyncClient, artist: str, title: str) -> dict | None:
         return await search_track(client, artist, title)

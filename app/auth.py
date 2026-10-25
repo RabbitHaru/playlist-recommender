@@ -15,8 +15,10 @@ from . import config
 
 AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
-# Read-only on purpose. Adding songs to a playlist will need playlist-modify-* later.
-SCOPES = "playlist-read-private playlist-read-collaborative"
+# Login starts read-only. Write access is requested separately, only when the user
+# chooses to add songs to a playlist.
+SCOPES_READ = "playlist-read-private playlist-read-collaborative"
+SCOPES_WRITE = SCOPES_READ + " playlist-modify-public playlist-modify-private"
 
 COOKIE = "sid"
 PENDING_TTL = 600
@@ -38,7 +40,7 @@ def _cleanup() -> None:
         del _sessions[sid]
 
 
-def login_url() -> str:
+def login_url(write: bool = False) -> str:
     _cleanup()
     state = secrets.token_urlsafe(24)
     verifier = secrets.token_urlsafe(64)
@@ -53,7 +55,7 @@ def login_url() -> str:
             "client_id": config.SPOTIFY_CLIENT_ID,
             "response_type": "code",
             "redirect_uri": config.SPOTIFY_REDIRECT_URI,
-            "scope": SCOPES,
+            "scope": SCOPES_WRITE if write else SCOPES_READ,
             "state": state,
             "code_challenge_method": "S256",
             "code_challenge": challenge,
@@ -87,8 +89,14 @@ async def finish_login(client: httpx.AsyncClient, code: str, state: str) -> str:
         "refresh_token": body.get("refresh_token"),
         "expires": time.time() + body["expires_in"],
         "created": time.time(),
+        "scope": body.get("scope", ""),
     }
     return sid
+
+
+def can_write(sid: str | None) -> bool:
+    session = _sessions.get(sid or "")
+    return bool(session and "playlist-modify" in session.get("scope", ""))
 
 
 async def access_token(client: httpx.AsyncClient, sid: str | None) -> str | None:

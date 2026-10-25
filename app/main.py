@@ -88,17 +88,23 @@ async def recommend(body: RecommendRequest, request: Request):
         except (ProviderError, lastfm.LastfmError) as exc:
             raise HTTPException(400, str(exc))
 
-    return {"playlist": playlist["name"], "seed_count": len(playlist["tracks"]), "results": recs}
+    return {
+        "playlist": playlist["name"],
+        "playlist_id": playlist.get("id"),
+        "seed_count": len(playlist["tracks"]),
+        "results": recs,
+    }
 
 
 SECURE_COOKIE = config.SPOTIFY_REDIRECT_URI.startswith("https://")
 
 
 @app.get("/auth/login")
-async def login():
+async def login(write: bool = False):
+    """write=1 asks Spotify for playlist-modify permission on top of read access."""
     if config.missing_keys():
         raise HTTPException(503, f".env에 키가 없어요: {', '.join(config.missing_keys())}")
-    return RedirectResponse(auth.login_url())
+    return RedirectResponse(auth.login_url(write=write))
 
 
 @app.get("/callback")
@@ -130,7 +136,11 @@ async def me(request: Request):
         if not token:
             return {"logged_in": False}
         profile = await _me(client, token) or {}
-    return {"logged_in": True, "name": profile.get("display_name") or profile.get("id") or ""}
+    return {
+        "logged_in": True,
+        "name": profile.get("display_name") or profile.get("id") or "",
+        "can_write": auth.can_write(request.cookies.get(auth.COOKIE)),
+    }
 
 
 @app.post("/auth/logout")
@@ -160,6 +170,39 @@ async def my_playlists(request: Request):
         if p and (p.get("owner", {}).get("id") == profile.get("id") or p.get("collaborative"))
     ]
     return {"playlists": mine}
+
+
+class AddRequest(BaseModel):
+    uris: list[str] = Field(min_length=1, max_length=50)
+
+
+def _check_same_origin(request: Request) -> None:
+    """Browsers send Origin on cross-site POSTs; refuse anything not from this site."""
+    origin = request.headers.get("origin")
+    if origin and origin != f"{request.url.scheme}://{request.headers.get('host')}":
+        raise HTTPException(403, "허용되지 않은 요청이에요.")
+
+
+@app.post("/api/playlists/{playlist_id}/tracks")
+async def add_to_playlist(playlist_id: str, body: AddRequest, request: Request):
+    _check_same_origin(request)
+    _check_rate_limit(request)
+    sid = request.cookies.get(auth.COOKIE)
+    if not spotify.valid_playlist_id(playlist_id) or not all(
+        spotify.valid_track_uri(u) for u in body.uris
+    ):
+        raise HTTPException(400, "추가할 곡 정보가 올바르지 않아요.")
+    async with httpx.AsyncClient(timeout=15) as client:
+        token = await auth.access_token(client, sid)
+        if not token:
+            raise HTTPException(401, "로그인이 필요해요.")
+        if not auth.can_write(sid):
+            raise HTTPException(403, "need_write")
+        try:
+            await spotify.add_tracks(client, playlist_id, body.uris, token)
+        except ProviderError as exc:
+            raise HTTPException(400, str(exc))
+    return {"added": len(body.uris)}
 
 
 @app.get("/")

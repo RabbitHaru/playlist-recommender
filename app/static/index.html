@@ -61,6 +61,12 @@
   .rec .reason { font-size:.85rem; margin:.375rem 0 .25rem; padding-left:1.1rem; color:var(--muted); }
   .rec .reason li { margin:.125rem 0; }
   .rec a { color:var(--accent); font-size:.875rem; text-decoration:none; }
+  .rec button.add { min-height:2.25rem; margin-top:.375rem; padding:.375rem .75rem; font-size:.875rem; }
+  .rec button.add[data-done] { opacity:1; border-color:var(--accent); color:var(--accent); }
+  .notice { margin:0 0 .75rem; padding:.625rem .75rem; border:1px solid var(--line); border-radius:.5rem; color:var(--muted); font-size:.9rem; }
+  .notice a { color:var(--accent); }
+  .headrow { display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap; margin-bottom:.5rem; }
+  .headrow .head { margin:0; }
   .placeholder { color:var(--muted); text-align:center; padding:3rem 1rem; }
   .err { color:#ff6b6b; margin-top:.75rem; }
   footer { color:var(--muted); font-size:.8rem; margin-top:1.5rem; }
@@ -79,6 +85,7 @@
         <span id="authtext" class="msg">Spotify 로그인이 필요해요 (플레이리스트 읽기 권한만 요청해요)</span>
         <span>
           <a id="loginbtn" href="/auth/login"><button type="button">Spotify로 로그인</button></a>
+          <a id="grantbtn" href="/auth/login?write=1" hidden><button type="button" class="ghost">추가 권한 허용</button></a>
           <form id="logoutform" method="post" action="/auth/logout" hidden>
             <button class="ghost" type="submit">로그아웃</button>
           </form>
@@ -145,12 +152,21 @@ function esc(s) {
   return d.innerHTML;
 }
 
+let me = { logged_in: false, can_write: false };
+let target = null; // playlist that "add" buttons write to
+
+function playlistIdFrom(url) {
+  const m = /playlist[\/:]([A-Za-z0-9]{22})/.exec(url || "");
+  return m ? m[1] : null;
+}
+
 async function initAuth() {
   try {
-    const me = await (await fetch("/auth/me")).json();
+    me = await (await fetch("/auth/me")).json();
     if (!me.logged_in) return;
-    $("authtext").textContent = `${me.name || "Spotify"} 님으로 로그인됨`;
+    $("authtext").textContent = `${me.name || "Spotify"} 님으로 로그인됨` + (me.can_write ? " (곡 추가 가능)" : "");
     $("loginbtn").hidden = true;
+    $("grantbtn").hidden = me.can_write;
     $("logoutform").hidden = false;
     const resp = await fetch("/api/playlists");
     if (!resp.ok) return;
@@ -205,11 +221,22 @@ function render(data) {
   $("placeholder").hidden = true;
   $("more").hidden = $("reset").hidden = false;
   if (!data.results.length) {
-    $("out").innerHTML = "<p>더 추천할 곡을 찾지 못했어요. 성향을 ‘새로운 발견’ 쪽으로 옮겨 보세요.</p>";
+    $("out").innerHTML = "<p>더 추천할 곡을 찾지 못했어요. 성향을 ‘새롭게’로 바꿔 보세요.</p>";
     return;
   }
+  const picked = $("mylist").selectedOptions[0];
+  target = data.playlist_id
+    ? { id: data.playlist_id, name: data.playlist }
+    : (playlistIdFrom($("mylist").value) ? { id: playlistIdFrom($("mylist").value), name: picked ? picked.textContent : "" } : null);
+  const canAdd = me.logged_in && target;
+  const notice = canAdd && !me.can_write
+    ? `<div class="notice">곡을 바로 추가하려면 <a href="/auth/login?write=1">추가 권한 허용</a>을 눌러 주세요. 플레이리스트 수정 권한을 한 번 더 요청해요.</div>`
+    : (!canAdd ? `<div class="notice">곡을 바로 추가하려면 Spotify로 로그인하고 ‘내 플레이리스트에서 고르기’로 플레이리스트를 선택해 주세요.</div>` : "");
   $("out").innerHTML =
-    `<div class="head">‘${esc(data.playlist)}’ ${data.seed_count}곡 기준</div><div class="reclist">` +
+    `<div class="headrow"><div class="head">‘${esc(data.playlist)}’ ${data.seed_count}곡 기준` +
+    (canAdd ? ` · 추가 대상 ‘${esc(target.name)}’` : "") + `</div>` +
+    (canAdd ? `<button id="addall" class="ghost">모두 추가</button>` : "") + `</div>` +
+    notice + `<div id="adderr" class="err" hidden></div><div class="reclist">` +
     data.results.map(r => `
       <div class="rec">
         ${r.link && r.link.image ? `<img src="${esc(r.link.image)}" alt="">` : `<div class="ph"></div>`}
@@ -218,9 +245,42 @@ function render(data) {
           <div class="artist">${esc(r.artist)}</div>
           <ul class="reason">${r.reasons.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
           ${r.link && r.link.url ? `<a href="${esc(r.link.url)}" target="_blank" rel="noopener">Spotify에서 열기</a>` : ""}
+          ${canAdd && r.link && r.link.uri ? `<div><button class="ghost add" data-uri="${esc(r.link.uri)}">＋ 플레이리스트에 추가</button></div>` : ""}
         </div>
       </div>`).join("") + `</div>`;
 }
+
+async function addTracks(uris, buttons) {
+  const errBox = $("adderr");
+  errBox.hidden = true;
+  buttons.forEach(b => { b.disabled = true; b.textContent = "추가 중..."; });
+  try {
+    const resp = await fetch(`/api/playlists/${target.id}/tracks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uris }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.status === 403 && data.detail === "need_write") {
+      throw new Error("곡을 추가하려면 먼저 ‘추가 권한 허용’을 눌러 주세요. 플레이리스트 수정 권한이 필요해요.");
+    }
+    if (!resp.ok) throw new Error(data.detail || "곡을 추가하지 못했어요.");
+    buttons.forEach(b => { b.textContent = "추가됨 ✓"; b.dataset.done = "1"; });
+  } catch (e) {
+    buttons.forEach(b => { b.disabled = false; b.textContent = "＋ 플레이리스트에 추가"; });
+    errBox.textContent = e.message;
+    errBox.hidden = false;
+  }
+}
+
+$("out").addEventListener("click", e => {
+  const one = e.target.closest("button.add");
+  if (one && !one.dataset.done) return addTracks([one.dataset.uri], [one]);
+  if (e.target.closest("#addall")) {
+    const todo = [...$("out").querySelectorAll("button.add:not([data-done])")];
+    if (todo.length) addTracks(todo.map(b => b.dataset.uri), todo);
+  }
+});
 
 $("go").onclick = () => run(false);
 $("more").onclick = () => run(true);
